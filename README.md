@@ -50,7 +50,7 @@ Use these steps after cloning the project from GitHub.
 ### 1. Clone the repository
 
 ```powershell
-git clone YOUR_GITHUB_REPOSITORY_URL
+git clone https://github.com/Shouaib-gf/SmartGrid
 cd SmartGrid-OS
 ```
 

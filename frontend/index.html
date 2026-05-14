@@ -1,0 +1,2125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SmartGrid OS</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    :root {
+      --bg: #f8fafc;
+      --bg2: #f1f5f9;
+      --bg3: #e8edf4;
+      --card: #fff;
+      --border: #e2e8f0;
+      --border2: #cbd5e1;
+      --text: #0f172a;
+      --text2: #334155;
+      --text3: #64748b;
+      --text4: #94a3b8;
+      --sidebar: #0f172a;
+      --c1: #6366f1;
+      --c2: #f59e0b;
+      --c3: #10b981;
+      --c4: #ef4444;
+      --c5: #3b82f6;
+      --c6: #8b5cf6;
+      --shadow: 0 1px 4px rgba(0, 0, 0, .06);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .3
+      }
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0
+      }
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+      font-size: 13px
+    }
+
+    /* BOOT */
+    #boot {
+      position: fixed;
+      inset: 0;
+      background: #0f172a;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity .7s
+    }
+
+    #boot.hide {
+      opacity: 0;
+      pointer-events: none
+    }
+
+    .boot-logo {
+      font-size: 46px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -2px;
+      margin-bottom: 4px
+    }
+
+    .boot-sub {
+      font-size: 10px;
+      color: #475569;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      margin-bottom: 40px
+    }
+
+    .boot-bar-wrap {
+      width: 260px;
+      height: 2px;
+      background: #1e293b;
+      border-radius: 2px;
+      overflow: hidden
+    }
+
+    .boot-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #6366f1, #3b82f6, #10b981);
+      width: 0%;
+      transition: width .08s linear
+    }
+
+    .boot-log {
+      margin-top: 20px;
+      font-size: 10px;
+      color: #334155;
+      text-align: left;
+      width: 260px;
+      line-height: 2.2;
+      font-family: monospace
+    }
+
+    /* SIDEBAR */
+    #sidebar {
+      width: 56px;
+      min-height: 100vh;
+      background: var(--sidebar);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 0;
+      gap: 2px;
+      flex-shrink: 0;
+      z-index: 10
+    }
+
+    .s-logo {
+      width: 32px;
+      height: 32px;
+      background: var(--c1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, .45)
+    }
+
+    .s-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #475569;
+      transition: all .18s;
+      position: relative
+    }
+
+    .s-btn:hover {
+      background: rgba(255, 255, 255, .07);
+      color: #94a3b8
+    }
+
+    .s-btn.active {
+      background: rgba(99, 102, 241, .22);
+      color: #a5b4fc
+    }
+
+    .s-btn svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.7
+    }
+
+    .s-tip {
+      position: absolute;
+      left: 46px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 10px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .15s;
+      color: #e2e8f0;
+      z-index: 100
+    }
+
+    .s-btn:hover .s-tip {
+      opacity: 1
+    }
+
+    .s-div {
+      width: 20px;
+      height: 1px;
+      background: #1e293b;
+      margin: 5px 0
+    }
+
+    /* MAIN */
+    #main {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column
+    }
+
+    #topbar {
+      height: 48px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      gap: 12px;
+      flex-shrink: 0;
+      box-shadow: var(--shadow)
+    }
+
+    .tb-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text)
+    }
+
+    .tb-sub {
+      font-size: 10px;
+      color: var(--text4)
+    }
+
+    .tb-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--c3);
+      animation: pulse 2s infinite;
+      box-shadow: 0 0 6px rgba(16, 185, 129, .5)
+    }
+
+    .tb-time {
+      font-size: 10px;
+      color: var(--text4);
+      font-family: monospace
+    }
+
+    .tb-alert {
+      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: #fef2f2;
+      color: var(--c4);
+      border: 1px solid #fecaca;
+      cursor: pointer;
+      font-weight: 500
+    }
+
+    .tb-status {
+      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 500
+    }
+
+    .tb-status.connected {
+      background: #f0fdf4;
+      color: var(--c3);
+      border: 1px solid #a7f3d0
+    }
+
+    .tb-status.disconnected {
+      background: #fef2f2;
+      color: var(--c4);
+      border: 1px solid #fecaca
+    }
+
+    #content {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 16px 16px 48px;
+      scrollbar-gutter: stable
+    }
+
+    .page {
+      display: none;
+      animation: fadeIn .25s ease
+    }
+
+    .page.active {
+      display: block
+    }
+
+    /* GRIDS */
+    .g4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 14px
+    }
+
+    .g3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px
+    }
+
+    .g2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px
+    }
+
+    .g21 {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px
+    }
+
+    /* CARD */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow)
+    }
+
+    .card-head {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 7px
+    }
+
+    .ch-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0
+    }
+
+    /* KPI */
+    .kpi {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow)
+    }
+
+    .kpi-stripe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      border-radius: 12px 12px 0 0
+    }
+
+    .kpi-label {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text4);
+      margin-bottom: 8px;
+      letter-spacing: .8px;
+      text-transform: uppercase
+    }
+
+    .kpi-val {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      margin-bottom: 2px
+    }
+
+    .kpi-delta {
+      font-size: 10px;
+      color: var(--text4)
+    }
+
+    .cw {
+      position: relative;
+      width: 100%
+    }
+
+    /* UPLOAD */
+    .upload-zone {
+      border: 2px dashed var(--border2);
+      border-radius: 12px;
+      padding: 34px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+      margin-bottom: 14px;
+      background: var(--bg2)
+    }
+
+    .upload-zone:hover,
+    .upload-zone.drag {
+      border-color: var(--c1);
+      background: rgba(99, 102, 241, .04)
+    }
+
+    .upload-zone input {
+      display: none
+    }
+
+    .uz-text {
+      font-size: 12px;
+      color: var(--text3)
+    }
+
+    .uz-text span {
+      color: var(--c1);
+      text-decoration: underline;
+      cursor: pointer
+    }
+
+    /* BUTTONS */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .16s
+    }
+
+    .btn-primary {
+      background: var(--c1);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, .3)
+    }
+
+    .btn-primary:hover {
+      background: #4f46e5
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text2);
+      border: 1px solid var(--border2)
+    }
+
+    .btn-outline:hover {
+      background: var(--bg3)
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed
+    }
+
+    /* FORM */
+    .fg {
+      margin-bottom: 10px
+    }
+
+    .fg label {
+      display: block;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text3);
+      margin-bottom: 4px;
+      letter-spacing: .3px;
+      text-transform: uppercase
+    }
+
+    .fg input,
+    .fg select {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: var(--text);
+      font-size: 11px;
+      outline: none;
+      transition: border .15s
+    }
+
+    .fg input:focus,
+    .fg select:focus {
+      border-color: var(--c1);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, .1)
+    }
+
+    .fg-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px
+    }
+
+    /* BADGE */
+    .badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
+      letter-spacing: .4px;
+      text-transform: uppercase
+    }
+
+    .b-danger {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca
+    }
+
+    .b-warn {
+      background: #fffbeb;
+      color: #d97706;
+      border: 1px solid #fde68a
+    }
+
+    .b-ok {
+      background: #f0fdf4;
+      color: #059669;
+      border: 1px solid #a7f3d0
+    }
+
+    /* TICKER */
+    #ticker {
+      background: linear-gradient(90deg, var(--c1), #4f46e5);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 10px;
+      color: rgba(255, 255, 255, .85);
+      overflow: hidden;
+      white-space: nowrap;
+      margin-bottom: 14px;
+      font-family: monospace
+    }
+
+    /* TERMINAL */
+    .terminal {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 11px;
+      line-height: 2.1;
+      max-height: 190px;
+      overflow-y: auto
+    }
+
+    .t-w {
+      color: #f1f5f9
+    }
+
+    .t-g {
+      color: #475569
+    }
+
+    .t-warn {
+      color: #f59e0b
+    }
+
+    .t-err {
+      color: #ef4444
+    }
+
+    .t-ok {
+      color: #10b981
+    }
+
+    /* ALERTS */
+    .alert-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-size: 11px;
+      border: 1px solid
+    }
+
+    .alert-crit {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #dc2626
+    }
+
+    .alert-warn {
+      background: #fffbeb;
+      border-color: #fde68a;
+      color: #d97706
+    }
+
+    .alert-ok {
+      background: #f0fdf4;
+      border-color: #a7f3d0;
+      color: #059669
+    }
+
+    /* PRED BOX */
+    .pred-box {
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 14px;
+      display: none;
+      border: 1px solid
+    }
+
+    .pred-box.low {
+      background: #f0fdf4;
+      border-color: #a7f3d0
+    }
+
+    .pred-box.med {
+      background: #fffbeb;
+      border-color: #fde68a
+    }
+
+    .pred-box.high {
+      background: #fef2f2;
+      border-color: #fecaca
+    }
+
+    /* CHAT */
+    .chat-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 380px;
+      overflow-y: auto;
+      scroll-behavior: smooth
+    }
+
+    .chat-msg {
+      padding: 11px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      line-height: 1.7;
+      animation: fadeIn .25s ease
+    }
+
+    .chat-user {
+      background: var(--c1);
+      color: #fff;
+      align-self: flex-end;
+      max-width: 86%;
+      border-radius: 10px 10px 2px 10px
+    }
+
+    .chat-ai {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      max-width: 93%;
+      border-radius: 10px 10px 10px 2px
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px
+    }
+
+    .chat-input-row input {
+      flex: 1;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-size: 11px;
+      outline: none
+    }
+
+    .chat-input-row input:focus {
+      border-color: var(--c1)
+    }
+
+    /* API KEY */
+    #api-banner {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      font-size: 11px;
+      color: #92400e;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap
+    }
+
+    #api-banner input {
+      flex: 1;
+      min-width: 200px;
+      border: 1px solid #fde68a;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      background: #fff;
+      outline: none
+    }
+
+    /* LOADING OVERLAY */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 255, 255, .7);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text3)
+    }
+
+    .loading-overlay.show {
+      display: flex
+    }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--c1);
+      border-radius: 50%;
+      animation: spin .7s linear infinite
+    }
+
+    /* NOTIFICATION */
+    .notif {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      background: var(--text);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 11px;
+      z-index: 2000;
+      transform: translateY(-80px);
+      transition: transform .3s;
+      max-width: 300px
+    }
+
+    .notif.show {
+      transform: translateY(0)
+    }
+
+    .notif.ok {
+      background: #059669
+    }
+
+    .notif.err {
+      background: #dc2626
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border2);
+      border-radius: 2px
+    }
+
+    .sep {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+      margin: 14px 0
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- LOADING -->
+  <div class="loading-overlay" id="loading">
+    <div class="spinner"></div>
+    <span id="loading-text">Processing...</span>
+  </div>
+  <div class="notif" id="notif"></div>
+
+  <!-- BOOT -->
+  <div id="boot">
+    <div class="boot-logo">SMARTGRID</div>
+    <div class="boot-sub">Energy Analytics OS</div>
+    <div class="boot-bar-wrap">
+      <div class="boot-bar" id="bootBar"></div>
+    </div>
+    <div class="boot-log" id="bootLog"></div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="s-logo">SG</div>
+    <div class="s-btn active" onclick="nav('dashboard',this)">
+      <svg viewBox="0 0 24 24">
+        <rect x="3" y="3" width="7" height="7" rx="1" />
+        <rect x="14" y="3" width="7" height="7" rx="1" />
+        <rect x="3" y="14" width="7" height="7" rx="1" />
+        <rect x="14" y="14" width="7" height="7" rx="1" />
+      </svg>
+      <span class="s-tip">Dashboard</span>
+    </div>
+    <div class="s-btn" onclick="nav('upload',this)">
+      <svg viewBox="0 0 24 24">
+        <polyline points="16 16 12 12 8 16" />
+        <line x1="12" y1="12" x2="12" y2="21" />
+        <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+      </svg>
+      <span class="s-tip">Upload Data</span>
+    </div>
+    <div class="s-btn" onclick="nav('timeseries',this)">
+      <svg viewBox="0 0 24 24">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+      </svg>
+      <span class="s-tip">Time Series</span>
+    </div>
+    <div class="s-btn" onclick="nav('heatmap',this)">
+      <svg viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="1" />
+        <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+      </svg>
+      <span class="s-tip">Heatmap</span>
+    </div>
+    <div class="s-btn" onclick="nav('prediction',this)">
+      <svg viewBox="0 0 24 24">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+      </svg>
+      <span class="s-tip">Prediction</span>
+    </div>
+    <div class="s-btn" onclick="nav('anomaly',this)">
+      <svg viewBox="0 0 24 24">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+      <span class="s-tip">Anomaly Detector</span>
+    </div>
+    <div class="s-div"></div>
+    <div class="s-btn" onclick="nav('ai',this)">
+      <svg viewBox="0 0 24 24">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+      <span class="s-tip">AI Assistant</span>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div id="topbar">
+      <div>
+        <div class="tb-title" id="tb-title">Dashboard</div>
+        <div class="tb-sub">Smart City Energy Analytics · SG02</div>
+      </div>
+      <div class="tb-right">
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text4)">
+          <div class="live-dot"></div> LIVE
+        </div>
+        <div class="tb-time" id="tb-clock"></div>
+        <div class="tb-status disconnected" id="api-status">⚡ Backend offline</div>
+        <div class="tb-alert" id="tb-alert-btn" onclick="nav('anomaly',document.querySelectorAll('.s-btn')[5])">⚠ 0
+          alerts</div>
+      </div>
+    </div>
+
+    <div id="content">
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active">
+        <div id="ticker">⚡ SmartGrid OS — Upload a CSV to begin real-time energy analysis</div>
+        <div class="g4">
+          <div class="kpi">
+            <div class="kpi-stripe" style="background:linear-gradient(90deg,#6366f1,#3b82f6)"></div>
+            <div class="kpi-label">Total Consumption</div>
+            <div class="kpi-val" id="d-total" style="color:var(--c1)">—</div>
+            <div class="kpi-delta">MWh analyzed</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-stripe" style="background:linear-gradient(90deg,#f59e0b,#fb923c)"></div>
+            <div class="kpi-label">Hourly Average</div>
+            <div class="kpi-val" id="d-avg" style="color:var(--c2)">—</div>
+            <div class="kpi-delta">kWh / hour</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-stripe" style="background:linear-gradient(90deg,#ef4444,#f97316)"></div>
+            <div class="kpi-label">Peak Load</div>
+            <div class="kpi-val" id="d-peak" style="color:var(--c4)">—</div>
+            <div class="kpi-delta">maximum recorded</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-stripe" style="background:linear-gradient(90deg,#10b981,#34d399)"></div>
+            <div class="kpi-label">Efficiency Score</div>
+            <div class="kpi-val" id="d-score" style="color:var(--c3)">—</div>
+            <div class="kpi-delta">out of 100</div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-head">
+            <div class="ch-dot" style="background:var(--c3)"></div>Live Replay From Uploaded Dataset
+            <div style="margin-left:auto;display:flex;gap:6px">
+              <button class="btn btn-outline" id="live-start" onclick="startLiveReplay()"
+                style="font-size:10px;padding:5px 10px">Start</button>
+              <button class="btn btn-outline" id="live-stop" onclick="stopLiveReplay()"
+                style="font-size:10px;padding:5px 10px">Stop</button>
+            </div>
+          </div>
+          <div class="g4" style="margin-bottom:10px">
+            <div>
+              <div class="kpi-label">Streamed Rows</div>
+              <div class="kpi-val" id="live-count" style="font-size:18px">0</div>
+            </div>
+            <div>
+              <div class="kpi-label">Latest Value</div>
+              <div class="kpi-val" id="live-latest" style="font-size:18px">-</div>
+            </div>
+            <div>
+              <div class="kpi-label">Running Avg</div>
+              <div class="kpi-val" id="live-avg" style="font-size:18px">-</div>
+            </div>
+            <div>
+              <div class="kpi-label">Progress</div>
+              <div class="kpi-val" id="live-progress" style="font-size:18px">0%</div>
+            </div>
+          </div>
+          <div class="cw" style="height:155px"><canvas id="c-live"></canvas></div>
+          <div id="live-status" style="font-size:10px;color:var(--text4);margin-top:8px;font-family:monospace">
+            Upload a CSV, then start live replay.
+          </div>
+        </div>
+        <div class="g21">
+          <div class="card">
+            <div class="card-head">
+              <div class="ch-dot" style="background:var(--c1)"></div>Consumption Timeline
+            </div>
+            <div class="cw" style="height:195px"><canvas id="c-main"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div class="ch-dot" style="background:var(--c2)"></div>Load Distribution
+            </div>
+            <div class="cw" style="height:195px"><canvas id="c-donut"></canvas></div>
+          </div>
+        </div>
+        <div class="g3">
+          <div class="card">
+            <div class="card-head">
+              <div class="ch-dot" style="background:var(--c5)"></div>Peak Hours
+            </div>
+            <div class="cw" style="height:155px"><canvas id="c-peaks"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div class="ch-dot" style="background:var(--c6)"></div>Weekly Pattern
+            </div>
+            <div class="cw" style="height:155px"><canvas id="c-weekly"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div class="ch-dot" style="background:var(--c3)"></div>Efficiency Gauge
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;padding-top:4px">
+              <canvas id="gaugeChart" width="150" height="85"></canvas>
+              <div id="gauge-val" style="font-size:20px;font-weight:700;color:var(--text);margin-top:4px">— kWh</div>
+              <div style="font-size:10px;color:var(--text4)">current avg load</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="ch-dot"></div>Data Preview
+          </div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:11px" id="preview-tbl"></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- UPLOAD -->
+      <div id="page-upload" class="page">
+        <div class="upload-zone" id="dropzone" onclick="document.getElementById('csvIn').click()">
+          <input type="file" id="csvIn" accept=".csv" onchange="handleUpload(this)">
+          <div style="font-size:28px;margin-bottom:8px;opacity:.4">📂</div>
+          <div class="uz-text"><span>Choose CSV file</span> or drag & drop here</div>
+          <div style="font-size:10px;color:var(--text4);margin-top:5px">Any energy dataset with timestamps —
+            auto-detects separator</div>
+        </div>
+        <div id="file-status" style="display:none">
+          <div class="card" style="margin-bottom:12px">
+            <div class="card-head">File Information</div>
+            <div id="file-info" style="font-size:11px;line-height:2.4;color:var(--text2);font-family:monospace"></div>
+          </div>
+          <div class="card">
+            <div class="card-head">Column Override (optional — auto-detected)</div>
+            <div class="fg-row" style="margin-bottom:12px">
+              <div class="fg"><label>Energy column</label><select id="col-energy"></select></div>
+              <div class="fg"><label>Timestamp column</label><select id="col-time"></select></div>
+            </div>
+            <button class="btn btn-primary" onclick="reAnalyze()">Re-analyze with selected columns →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TIME SERIES -->
+      <div id="page-timeseries" class="page">
+        <div class="g3" style="margin-bottom:12px">
+          <div class="kpi">
+            <div class="kpi-stripe" style="background:var(--c1)"></div>
+            <div class="kpi-label">Trend</div>
+            <div class="kpi-val" id="ts-trend" style="font-size:18px;color:var(--c1)">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-stripe" style="background:var(--c2)"></div>
+            <div class="kpi-label">Std Deviation</div>
+            <div class="kpi-val" id="ts-std" style="color:var(--c2)">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-stripe" style="background:var(--c3)"></div>
+            <div class="kpi-label">Seasonality</div>
+            <div class="kpi-val" id="ts-season" style="font-size:16px;color:var(--c3)">—</div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-head" style="justify-content:space-between">
+            <span>
+              <div class="ch-dot" style="background:var(--c1);display:inline-block;margin-right:7px"></div>Rolling
+              Average Decomposition
+            </span>
+            <select id="roll-win" onchange="updateRolling()"
+              style="font-size:10px;padding:3px 7px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text)">
+              <option value="6">6h</option>
+              <option value="12">12h</option>
+              <option value="24" selected>24h</option>
+              <option value="48">48h</option>
+            </select>
+          </div>
+          <div class="cw" style="height:210px"><canvas id="c-rolling"></canvas></div>
+        </div>
+        <div class="g2">
+          <div class="card">
+            <div class="card-head">
+              <div class="ch-dot" style="background:var(--c6)"></div>Monthly Totals
+            </div>
+            <div class="cw" style="height:170px"><canvas id="c-monthly"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div class="ch-dot" style="background:var(--c2)"></div>Hourly Spread
+            </div>
+            <div class="cw" style="height:170px"><canvas id="c-spread"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HEATMAP -->
+      <div id="page-heatmap" class="page">
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-head">
+            <div class="ch-dot" style="background:var(--c1)"></div>Hour × Day Heatmap — darker = higher consumption
+          </div>
+          <div style="margin-bottom:8px;display:flex;gap:14px;font-size:9px;color:var(--text4);align-items:center">
+            <span id="hmap-source">Hours (0-23) -></span>
+            <span style="margin-left:auto">Low <span
+                style="display:inline-block;width:70px;height:5px;border-radius:3px;background:linear-gradient(to right,#eef7f4,#2a9d8f,#f4a261,#e76f51);vertical-align:middle;margin:0 5px"></span>
+              High</span>
+          </div>
+          <div id="hmap-container"></div>
+          <div id="hmap-tooltip"
+            style="font-size:10px;color:var(--text2);margin-top:8px;min-height:14px;padding:5px 10px;border-radius:6px;background:var(--bg2);display:inline-block;font-family:monospace">
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="ch-dot" style="background:var(--c5)"></div>Monthly Average (from server)
+          </div>
+          <div class="cw" style="height:180px"><canvas id="c-monthly-heat"></canvas></div>
+        </div>
+      </div>
+
+      <!-- PREDICTION -->
+      <div id="page-prediction" class="page">
+        <div id="model-info-bar"
+          style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:var(--text3);font-family:monospace;display:none">
+          Model loaded · <span id="mi-type"></span> · MAE: <span id="mi-mae"></span> · RMSE: <span id="mi-rmse"></span>
+          · R²: <span id="mi-r2"></span>
+        </div>
+        <div class="g2">
+          <div class="card">
+            <div class="card-head">
+              <div class="ch-dot" style="background:var(--c1)"></div>Input Features
+            </div>
+            <div class="fg-row">
+              <div class="fg"><label>Hour of Day (0–23)</label><input type="number" id="pr-h" value="14" min="0"
+                  max="23"></div>
+              <div class="fg"><label>Day of Week (0=Mon)</label><input type="number" id="pr-d" value="1" min="0"
+                  max="6"></div>
+            </div>
+            <div class="fg-row">
+              <div class="fg"><label>Month (1–12)</label><input type="number" id="pr-m" value="7" min="1" max="12">
+              </div>
+              <div class="fg"><label>Is Weekend?</label><select id="pr-w">
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select></div>
+            </div>
+            <div class="fg-row">
+              <div class="fg"><label>Temperature (°C)</label><input type="number" id="pr-t" value="28" step="0.5"></div>
+              <div class="fg"><label>Season (0–3)</label><select id="pr-s">
+                  <option value="0">Winter</option>
+                  <option value="1">Spring</option>
+                  <option value="2" selected>Summer</option>
+                  <option value="3">Autumn</option>
+                </select></div>
+            </div>
+            <button class="btn btn-primary" id="pred-btn" onclick="runPred()"
+              style="width:100%;justify-content:center;margin-top:6px">
+              Predict with Real ML Model →
+            </button>
+            <div id="pred-box" class="pred-box">
+              <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+                <div>
+                  <div
+                    style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">
+                    Predicted Load</div>
+                  <div id="pred-val" style="font-size:42px;font-weight:700;letter-spacing:-2px"></div>
+                  <div style="font-size:10px;color:var(--text3)">kWh</div>
+                </div>
+                <div style="flex:1;min-width:110px">
+                  <div
+                    style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">
+                    Load Level</div>
+                  <div id="pred-badge"></div>
+                  <div
+                    style="font-size:10px;font-weight:600;color:var(--text3);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.5px">
+                    Capacity Usage</div>
+                  <div style="background:var(--bg3);border-radius:4px;height:5px;overflow:hidden">
+                    <div id="pred-bar" style="height:100%;border-radius:4px;transition:width .5s"></div>
+                  </div>
+                  <div id="pred-pct" style="font-size:10px;color:var(--text4);margin-top:3px;font-family:monospace">
+                  </div>
+                </div>
+              </div>
+              <div id="pred-factors" style="margin-top:12px;font-size:11px;line-height:2;color:var(--text2)"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div class="ch-dot" style="background:var(--c3)"></div>24h ML Forecast
+            </div>
+            <div class="cw" style="height:210px"><canvas id="c-forecast"></canvas></div>
+            <div style="margin-top:14px">
+              <div class="card-head">
+                <div class="ch-dot" style="background:var(--c2)"></div>Recommendations
+              </div>
+              <div id="savings-tips" style="font-size:11px;line-height:2.1;color:var(--text3)">Run prediction to see
+                tips.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANOMALY -->
+      <div id="page-anomaly" class="page">
+        <div class="g3" style="margin-bottom:12px">
+          <div class="kpi">
+            <div class="kpi-stripe" style="background:var(--c2)"></div>
+            <div class="kpi-label">Anomalies Found</div>
+            <div class="kpi-val" id="an-count" style="color:var(--c2)">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-stripe" style="background:var(--c4)"></div>
+            <div class="kpi-label">Critical Spikes</div>
+            <div class="kpi-val" id="an-crit" style="color:var(--c4)">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-stripe" style="background:var(--c1)"></div>
+            <div class="kpi-label">Anomaly Rate</div>
+            <div class="kpi-val" id="an-rate" style="color:var(--c1)">—</div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-head">
+            <div class="ch-dot" style="background:var(--c4)"></div>Anomaly Detection — Z-score (|z| &gt; 2.5) — Real
+            data from server
+          </div>
+          <div class="cw" style="height:210px"><canvas id="c-anomaly"></canvas></div>
+        </div>
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-head">
+            <div class="ch-dot" style="background:var(--c2)"></div>Alert Log
+          </div>
+          <div id="alert-log"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="ch-dot"></div>Analysis Terminal
+          </div>
+          <div class="terminal" id="anomaly-term"><span class="t-w">smartgrid@os:~$</span> <span class="t-g">awaiting
+              data from backend...</span></div>
+        </div>
+      </div>
+
+      <!-- AI ASSISTANT -->
+      <div id="page-ai" class="page">
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-head">
+            <div class="ch-dot" style="background:var(--c6)"></div>Dataset Context
+          </div>
+          <div id="ai-context" style="font-size:11px;line-height:2.2;color:var(--text2);font-family:monospace">
+            No data loaded yet - upload a CSV to enable AI analysis.
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="ch-dot" style="background:var(--c1)"></div>SmartGrid AI Assistant
+          </div>
+          <div class="chat-wrap" id="chat-wrap">
+            <div class="chat-msg chat-ai">
+              Hello! I'm SmartGrid AI. Upload a dataset and ask me anything about your energy data - anomalies, peaks,
+              efficiency tips, forecasts, and more.
+            </div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-outline" onclick="quickPrompt('What are the main anomalies in this dataset?')"
+              style="font-size:10px;padding:5px 10px">Anomalies</button>
+            <button class="btn btn-outline"
+              onclick="quickPrompt('Give me efficiency improvement tips based on the data.')"
+              style="font-size:10px;padding:5px 10px">Tips</button>
+            <button class="btn btn-outline" onclick="quickPrompt('Summarize the overall energy consumption pattern.')"
+              style="font-size:10px;padding:5px 10px">Summary</button>
+            <button class="btn btn-outline" onclick="clearChat()"
+              style="font-size:10px;padding:5px 10px;margin-left:auto">Clear</button>
+          </div>
+          <div class="chat-input-row">
+            <input type="text" id="chat-in" placeholder="Ask about your energy data..."
+              onkeydown="if(event.key==='Enter')sendChat()">
+            <button class="btn btn-primary" id="send-btn" onclick="sendChat()">Send</button>
+          </div>
+        </div>
+      </div>
+
+
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+
+  <script>
+    // ════════════════════════════════════════════════
+    //  CONFIG
+    // ════════════════════════════════════════════════
+    const API = 'http://localhost:5000';
+
+    // ════════════════════════════════════════════════
+    //  CHART.JS DEFAULTS
+    // ════════════════════════════════════════════════
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.borderColor = '#e2e8f0';
+    Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+    Chart.defaults.font.size = 10;
+
+    const gc = '#f1f5f9', tc = '#94a3b8';
+    const TOOLTIP = {
+      backgroundColor: '#0f172a', titleColor: '#f1f5f9',
+      bodyColor: '#94a3b8', borderColor: '#1e293b', borderWidth: 1,
+      padding: 10, cornerRadius: 8
+    };
+    const baseOpts = {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: TOOLTIP },
+      scales: {
+        x: { grid: { color: gc }, ticks: { color: tc, maxTicksLimit: 8, font: { size: 9 } } },
+        y: { grid: { color: gc }, ticks: { color: tc, font: { size: 9 } } }
+      }
+    };
+
+    // ════════════════════════════════════════════════
+    //  BOOT
+    // ════════════════════════════════════════════════
+    const bootMsgs = [
+      '> Initializing SmartGrid OS...',
+      '> Connecting to Flask backend...',
+      '> Loading ML model artifacts...',
+      '> Anomaly detection engine ready...',
+      '> All systems nominal. Launching...'
+    ];
+    let bootIdx = 0, bootPct = 0;
+    const bootIv = setInterval(() => {
+      bootPct += 100 / bootMsgs.length;
+      document.getElementById('bootBar').style.width = Math.min(bootPct, 100) + '%';
+      if (bootIdx < bootMsgs.length) {
+        document.getElementById('bootLog').innerHTML += `<span>${bootMsgs[bootIdx]}</span>\n`;
+        bootIdx++;
+      }
+      if (bootPct >= 100) {
+        clearInterval(bootIv);
+        setTimeout(() => document.getElementById('boot').classList.add('hide'), 500);
+        checkBackend();
+      }
+    }, 260);
+
+    setInterval(() => { document.getElementById('tb-clock').textContent = new Date().toLocaleTimeString(); }, 1000);
+
+    // ════════════════════════════════════════════════
+    //  BACKEND CHECK
+    // ════════════════════════════════════════════════
+    async function checkBackend() {
+      try {
+        const r = await fetch(`${API}/model_info`);
+        const d = await r.json();
+        if (d.ok) {
+          document.getElementById('api-status').textContent = '⚡ Backend online';
+          document.getElementById('api-status').className = 'tb-status connected';
+          // Show model info on prediction page
+          document.getElementById('model-info-bar').style.display = 'block';
+          document.getElementById('mi-type').textContent = d.model_type;
+          document.getElementById('mi-mae').textContent = d.mae;
+          document.getElementById('mi-rmse').textContent = d.rmse;
+          document.getElementById('mi-r2').textContent = d.r2;
+        }
+      } catch (e) {
+        document.getElementById('api-status').textContent = '⚡ Backend offline';
+      }
+    }
+
+    // ════════════════════════════════════════════════
+    //  UI HELPERS
+    // ════════════════════════════════════════════════
+    function showLoading(msg = 'Processing...') {
+      document.getElementById('loading-text').textContent = msg;
+      document.getElementById('loading').classList.add('show');
+    }
+    function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+
+    function notify(msg, type = 'ok') {
+      const el = document.getElementById('notif');
+      el.textContent = msg; el.className = `notif ${type} show`;
+      setTimeout(() => el.classList.remove('show'), 3500);
+    }
+
+    const pageTitles = {
+      dashboard: 'Dashboard', upload: 'Upload Data',
+      timeseries: 'Time Series', heatmap: 'Heatmap',
+      prediction: 'Prediction', anomaly: 'Anomaly Detector', ai: 'AI Assistant'
+    };
+    function nav(p, el) {
+      document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.s-btn').forEach(x => x.classList.remove('active'));
+      document.getElementById('page-' + p).classList.add('active');
+      if (el) el.classList.add('active');
+      document.getElementById('tb-title').textContent = pageTitles[p] || p;
+      if (p === 'anomaly' && globalData) loadAnomalies();
+    }
+
+    function dc(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+    // ════════════════════════════════════════════════
+    //  STATE
+    // ════════════════════════════════════════════════
+    let charts = {}, globalData = null, lastFile = null, liveTimer = null, livePoints = [];
+    let apiKey = sessionStorage.getItem('sg_api_key') || '';
+    // api key managed server-side
+    function saveApiKey(v) { apiKey = v.trim(); sessionStorage.setItem('sg_api_key', apiKey); }
+
+    // ════════════════════════════════════════════════
+    //  UPLOAD → real API call
+    // ════════════════════════════════════════════════
+    async function handleUpload(inp) {
+      const file = inp.files[0]; if (!file) return;
+      lastFile = file;
+      showLoading('Uploading & analyzing CSV...');
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const r = await fetch(`${API}/upload`, { method: 'POST', body: fd });
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.error);
+        globalData = d;
+        // Fill column dropdowns
+        const esel = document.getElementById('col-energy');
+        const tsel = document.getElementById('col-time');
+        esel.innerHTML = ''; tsel.innerHTML = '<option value="">— none —</option>';
+        d.headers.forEach(h => {
+          esel.innerHTML += `<option value="${h}" ${h === d.energy_col ? 'selected' : ''}>${h}</option>`;
+          tsel.innerHTML += `<option value="${h}" ${h === d.time_col ? 'selected' : ''}>${h}</option>`;
+        });
+        document.getElementById('file-info').innerHTML =
+          `Rows: <strong>${d.rows.toLocaleString()}</strong> &nbsp;|&nbsp; Columns: <strong>${d.cols}</strong> &nbsp;|&nbsp; Separator: <strong>'${d.sep}'</strong><br>` +
+          `Energy column: <strong>${d.energy_col}</strong> &nbsp;|&nbsp; Time column: <strong>${d.time_col || 'none'}</strong>`;
+        document.getElementById('file-status').style.display = 'block';
+        renderDashboard(d);
+        renderTimeSeries(d);
+        renderHeatmap(d);
+        updateAIContext(d);
+        updateTicker(d);
+        resetLiveReplay();
+        notify(`✓ Loaded ${d.rows.toLocaleString()} rows successfully`, 'ok');
+        nav('dashboard', document.querySelectorAll('.s-btn')[0]);
+      } catch (e) {
+        notify('Error: ' + e.message, 'err');
+      } finally { hideLoading(); }
+    }
+
+    async function reAnalyze() {
+      if (!lastFile) { notify('Please upload a file first', 'err'); return; }
+      showLoading('Re-analyzing...');
+      try {
+        const fd = new FormData();
+        fd.append('file', lastFile);
+        fd.append('energy_col', document.getElementById('col-energy').value);
+        const tc = document.getElementById('col-time').value;
+        if (tc) fd.append('time_col', tc);
+        const r = await fetch(`${API}/upload`, { method: 'POST', body: fd });
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.error);
+        globalData = d;
+        renderDashboard(d);
+        renderTimeSeries(d);
+        renderHeatmap(d);
+        updateAIContext(d);
+        updateTicker(d);
+        resetLiveReplay();
+        notify('✓ Re-analyzed with new column mapping', 'ok');
+        nav('dashboard', document.querySelectorAll('.s-btn')[0]);
+      } catch (e) { notify('Error: ' + e.message, 'err'); }
+      finally { hideLoading(); }
+    }
+
+    // Drag & drop
+    const dz = document.getElementById('dropzone');
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault(); dz.classList.remove('drag');
+      const f = e.dataTransfer.files[0];
+      if (f) { const dt = new DataTransfer(); dt.items.add(f); document.getElementById('csvIn').files = dt.files; handleUpload(document.getElementById('csvIn')); }
+    });
+
+    // ════════════════════════════════════════════════
+    //  DASHBOARD RENDER (real data from server)
+    // ════════════════════════════════════════════════
+    function renderDashboard(d) {
+      const kpi = d.kpi;
+      document.getElementById('d-total').textContent = kpi.total + 'M';
+      document.getElementById('d-avg').textContent = kpi.mean;
+      document.getElementById('d-peak').textContent = kpi.peak;
+      document.getElementById('d-score').textContent = kpi.score;
+      document.getElementById('gauge-val').textContent = kpi.mean + ' kWh';
+      drawGauge(kpi.score);
+
+      // Main timeline
+      dc('c-main');
+      charts['c-main'] = new Chart(document.getElementById('c-main'), {
+        type: 'line',
+        data: {
+          labels: d.timeline.map((_, i) => i),
+          datasets: [{
+            data: d.timeline,
+            borderColor: '#6366f1',
+            backgroundColor: ctx => {
+              const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 195);
+              g.addColorStop(0, 'rgba(99,102,241,.18)'); g.addColorStop(1, 'rgba(99,102,241,0)');
+              return g;
+            },
+            fill: true, tension: .35, pointRadius: 0, borderWidth: 2
+          }]
+        },
+        options: { ...baseOpts }
+      });
+
+      // Donut
+      dc('c-donut');
+      charts['c-donut'] = new Chart(document.getElementById('c-donut'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Low', 'Normal', 'High'],
+          datasets: [{ data: [d.donut.low, d.donut.normal, d.donut.high], backgroundColor: ['#10b981', '#6366f1', '#ef4444'], borderWidth: 0, hoverOffset: 6 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '68%',
+          plugins: { legend: { display: true, position: 'bottom', labels: { color: '#64748b', boxWidth: 10, font: { size: 9 } } }, tooltip: TOOLTIP }
+        }
+      });
+
+      // Peak hours
+      const maxH = Math.max(...d.hourly_avg);
+      const meanH = d.hourly_avg.reduce((a, b) => a + b, 0) / 24;
+      dc('c-peaks');
+      charts['c-peaks'] = new Chart(document.getElementById('c-peaks'), {
+        type: 'bar',
+        data: {
+          labels: Array.from({ length: 24 }, (_, i) => i + 'h'),
+          datasets: [{ data: d.hourly_avg, backgroundColor: d.hourly_avg.map(v => v === maxH ? '#ef4444' : v > meanH * 1.15 ? '#f59e0b' : '#6366f1'), borderRadius: 4, borderWidth: 0 }]
+        },
+        options: { ...baseOpts, scales: { ...baseOpts.scales, x: { ...baseOpts.scales.x, ticks: { color: tc, font: { size: 8 }, maxTicksLimit: 12 } } } }
+      });
+
+      // Weekly
+      dc('c-weekly');
+      charts['c-weekly'] = new Chart(document.getElementById('c-weekly'), {
+        type: 'bar',
+        data: {
+          labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+          datasets: [{ data: d.daily_avg, backgroundColor: d.daily_avg.map((_, i) => i === 0 || i === 6 ? '#8b5cf6' : '#6366f1'), borderRadius: 4, borderWidth: 0 }]
+        },
+        options: { ...baseOpts, scales: { ...baseOpts.scales, x: { ...baseOpts.scales.x, ticks: { color: tc, font: { size: 9 }, autoSkip: false, maxRotation: 0 } } } }
+      });
+
+      // Preview table
+      if (d.preview_rows && d.preview_cols) {
+        let html = '<thead><tr>' + d.preview_cols.map(c =>
+          `<th style="text-align:left;padding:7px 10px;color:var(--text3);border-bottom:1px solid var(--border);font-size:9px;text-transform:uppercase;letter-spacing:.8px;font-weight:600">${c}</th>`
+        ).join('') + '</tr></thead><tbody>';
+        d.preview_rows.forEach((row, ri) => {
+          html += `<tr style="background:${ri % 2 ? 'var(--bg2)' : 'transparent'}">`;
+          html += d.preview_cols.map(c => `<td style="padding:7px 10px;border-bottom:1px solid rgba(226,232,240,.5);font-size:11px;color:var(--text2)">${row[c] || '—'}</td>`).join('');
+          html += '</tr>';
+        });
+        html += '</tbody>';
+        document.getElementById('preview-tbl').innerHTML = html;
+      }
+    }
+
+    function resetLiveReplay() {
+      stopLiveReplay(false);
+      livePoints = [];
+      document.getElementById('live-count').textContent = '0';
+      document.getElementById('live-latest').textContent = '-';
+      document.getElementById('live-avg').textContent = '-';
+      document.getElementById('live-progress').textContent = '0%';
+      document.getElementById('live-status').textContent = 'Ready to replay uploaded rows as a live stream.';
+      dc('c-live');
+      charts['c-live'] = new Chart(document.getElementById('c-live'), {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Live consumption',
+            data: [],
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16,185,129,.08)',
+            fill: true,
+            tension: .28,
+            pointRadius: 0,
+            borderWidth: 2
+          }]
+        },
+        options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: { display: false } } }
+      });
+    }
+
+    async function startLiveReplay() {
+      if (!globalData) { notify('Upload a CSV first', 'err'); return; }
+      try {
+        await fetch(`${API}/stream/start`, { method: 'POST' });
+        livePoints = [];
+        resetLiveReplay();
+        document.getElementById('live-status').textContent = 'Streaming real rows from the uploaded dataset...';
+        liveTimer = setInterval(pollLiveReplay, 900);
+        pollLiveReplay();
+      } catch (e) {
+        notify('Live replay error: ' + e.message, 'err');
+      }
+    }
+
+    async function stopLiveReplay(callServer = true) {
+      if (liveTimer) clearInterval(liveTimer);
+      liveTimer = null;
+      if (callServer) {
+        try { await fetch(`${API}/stream/stop`, { method: 'POST' }); } catch (_) { }
+      }
+      const status = document.getElementById('live-status');
+      if (status) status.textContent = 'Live replay stopped.';
+    }
+
+    async function pollLiveReplay() {
+      try {
+        const r = await fetch(`${API}/stream/next?batch_size=80`);
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.error || 'Stream error');
+        livePoints.push(...d.batch.map(x => x.value));
+        livePoints = livePoints.slice(-300);
+
+        document.getElementById('live-count').textContent = d.running.count.toLocaleString();
+        document.getElementById('live-latest').textContent = d.latest?.toFixed ? d.latest.toFixed(2) : d.latest;
+        document.getElementById('live-avg').textContent = d.running.mean;
+        document.getElementById('live-progress').textContent = d.progress + '%';
+        document.getElementById('live-status').textContent =
+          `Streaming ${d.index.toLocaleString()} / ${d.total_rows.toLocaleString()} rows from real uploaded data`;
+
+        if (charts['c-live']) {
+          charts['c-live'].data.labels = livePoints.map((_, i) => i);
+          charts['c-live'].data.datasets[0].data = livePoints;
+          charts['c-live'].update('none');
+        }
+        if (!d.active) {
+          stopLiveReplay(false);
+          document.getElementById('live-status').textContent = 'Live replay complete.';
+        }
+      } catch (e) {
+        stopLiveReplay(false);
+        notify('Live replay error: ' + e.message, 'err');
+      }
+    }
+
+    function drawGauge(score) {
+      const c = document.getElementById('gaugeChart');
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, 150, 85);
+      const cx = 75, cy = 80, r = 58;
+      ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 0, false);
+      ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 9; ctx.stroke();
+      const end = Math.PI - (Math.PI * (score / 100));
+      ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, end, false);
+      const g = ctx.createLinearGradient(0, 80, 150, 80);
+      g.addColorStop(0, '#10b981'); g.addColorStop(.5, '#6366f1'); g.addColorStop(1, '#ef4444');
+      ctx.strokeStyle = g; ctx.lineWidth = 9; ctx.lineCap = 'round'; ctx.stroke();
+      const angle = Math.PI * (1 - score / 100);
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + (r - 14) * Math.cos(angle + Math.PI), cy + (r - 14) * Math.sin(angle + Math.PI));
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fillStyle = '#334155'; ctx.fill();
+    }
+
+    // ════════════════════════════════════════════════
+    //  TIME SERIES (real data)
+    // ════════════════════════════════════════════════
+    function renderTimeSeries(d) {
+      document.getElementById('ts-trend').textContent = (d.trend === 'Rising' ? '↑ ' : '↓ ') + d.trend;
+      document.getElementById('ts-std').textContent = d.std;
+      document.getElementById('ts-season').textContent = 'See heatmap';
+
+      // Rolling avg
+      dc('c-rolling');
+      charts['c-rolling'] = new Chart(document.getElementById('c-rolling'), {
+        type: 'line',
+        data: {
+          labels: d.rolling.raw.map((_, i) => i),
+          datasets: [
+            { data: d.rolling.raw, borderColor: 'rgba(99,102,241,.2)', fill: false, tension: .2, pointRadius: 0, borderWidth: 1 },
+            { data: d.rolling.roll24, borderColor: '#6366f1', fill: true, backgroundColor: 'rgba(99,102,241,.07)', tension: .4, pointRadius: 0, borderWidth: 2 }
+          ]
+        },
+        options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: { display: true, position: 'top', labels: { color: '#64748b', boxWidth: 10, font: { size: 9 } } } } }
+      });
+
+      // Monthly
+      dc('c-monthly');
+      charts['c-monthly'] = new Chart(document.getElementById('c-monthly'), {
+        type: 'bar',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+          datasets: [{ data: d.monthly_avg, backgroundColor: d.monthly_avg.map((_, i) => `hsl(${220 + i * 11},70%,${52 + i * 2}%)`), borderRadius: 5, borderWidth: 0 }]
+        },
+        options: { ...baseOpts, scales: { ...baseOpts.scales, x: { ...baseOpts.scales.x, ticks: { color: tc, font: { size: 8 }, autoSkip: false, maxRotation: 0 } } } }
+      });
+
+      // Hourly spread
+      dc('c-spread');
+      charts['c-spread'] = new Chart(document.getElementById('c-spread'), {
+        type: 'bar',
+        data: {
+          labels: Array.from({ length: 24 }, (_, i) => i + 'h'),
+          datasets: [
+            { label: 'Avg', data: d.hourly_avg, backgroundColor: 'rgba(99,102,241,.75)', borderRadius: 3, borderWidth: 0 },
+            { label: 'Daily Avg', data: d.daily_avg.slice(0, 24), backgroundColor: 'rgba(245,158,11,.55)', borderRadius: 3, borderWidth: 0 }
+          ]
+        },
+        options: {
+          ...baseOpts,
+          plugins: { ...baseOpts.plugins, legend: { display: true, position: 'top', labels: { color: '#64748b', boxWidth: 10, font: { size: 9 } } } },
+          scales: { ...baseOpts.scales, x: { ...baseOpts.scales.x, ticks: { color: tc, font: { size: 8 }, maxTicksLimit: 12 } } }
+        }
+      });
+    }
+
+    // ════════════════════════════════════════════════
+    //  HEATMAP (real day/hour averages from uploaded data)
+    // ════════════════════════════════════════════════
+    function renderHeatmap(d) {
+      const heat = d.heatmap || [];
+      const counts = d.heatmap_counts || [];
+      const values = heat.flat().filter(v => Number.isFinite(v) && v > 0);
+      const maxV = values.length ? Math.max(...values) : 0;
+      const minV = values.length ? Math.min(...values) : 0;
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const container = document.getElementById('hmap-container');
+      const source = document.getElementById('hmap-source');
+      if (source) {
+        source.textContent = d.temporal_source === 'timestamp'
+          ? 'Real timestamp grouping: day x hour'
+          : 'Generated time grouping: no timestamp column detected';
+      }
+      container.innerHTML = '';
+      heat.forEach((row, di) => {
+        const rowDiv = document.createElement('div');
+        rowDiv.style.cssText = 'display:flex;align-items:center;gap:4px;margin-bottom:3px';
+        const lbl = document.createElement('span');
+        lbl.style.cssText = 'font-size:9px;color:var(--text4);width:28px;text-align:right;flex-shrink:0;font-family:monospace';
+        lbl.textContent = days[di];
+        rowDiv.appendChild(lbl);
+        const grid = document.createElement('div');
+        grid.style.cssText = 'display:grid;grid-template-columns:repeat(24,minmax(8px,1fr));gap:3px;flex:1';
+        row.forEach((value, hi) => {
+          const count = counts[di]?.[hi] || 0;
+          const intensity = maxV > minV ? (value - minV) / (maxV - minV) : (maxV ? value / maxV : 0);
+          const color = heatColor(intensity, count);
+          const cell = document.createElement('div');
+          cell.style.cssText = `height:18px;border-radius:4px;background:${color};border:1px solid rgba(15,23,42,.05);cursor:pointer;transition:transform .1s,box-shadow .1s`;
+          cell.onmouseenter = () => {
+            document.getElementById('hmap-tooltip').textContent =
+              count ? `${days[di]} ${hi}:00 - avg ${value.toFixed(2)} kWh from ${count} rows` : `${days[di]} ${hi}:00 - no rows`;
+            cell.style.transform = 'scale(1.18)';
+            cell.style.boxShadow = '0 4px 12px rgba(15,23,42,.16)';
+          };
+          cell.onmouseleave = () => { cell.style.transform = ''; cell.style.boxShadow = ''; };
+          grid.appendChild(cell);
+        });
+        rowDiv.appendChild(grid);
+        container.appendChild(rowDiv);
+      });
+
+      // Monthly chart in heatmap page
+      dc('c-monthly-heat');
+      charts['c-monthly-heat'] = new Chart(document.getElementById('c-monthly-heat'), {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+          datasets: [{
+            data: d.monthly_avg,
+            borderColor: '#6366f1',
+            backgroundColor: ctx => {
+              const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 180);
+              g.addColorStop(0, 'rgba(99,102,241,.2)'); g.addColorStop(1, 'rgba(99,102,241,0)');
+              return g;
+            },
+            fill: true, tension: .4, pointRadius: 4, pointBackgroundColor: '#6366f1', borderWidth: 2
+          }]
+        },
+        options: { ...baseOpts, scales: { ...baseOpts.scales, x: { ...baseOpts.scales.x, ticks: { color: tc, font: { size: 8 }, autoSkip: false, maxRotation: 0 } } } }
+      });
+    }
+
+    // ════════════════════════════════════════════════
+    function heatColor(t, count) {
+      if (!count) return '#f8fafc';
+      const stops = [
+        [238, 247, 244],
+        [42, 157, 143],
+        [244, 162, 97],
+        [231, 111, 81],
+      ];
+      const x = Math.max(0, Math.min(1, t)) * (stops.length - 1);
+      const i = Math.min(stops.length - 2, Math.floor(x));
+      const f = x - i;
+      const rgb = stops[i].map((v, c) => Math.round(v + (stops[i + 1][c] - v) * f));
+      return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+    }
+
+    //  ANOMALY (real data from /stats)
+    // ════════════════════════════════════════════════
+    async function loadAnomalies() {
+      try {
+        const r = await fetch(`${API}/stats`);
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.error);
+
+        document.getElementById('an-count').textContent = d.anomaly_count;
+        document.getElementById('an-crit').textContent = d.crit_count;
+        document.getElementById('an-rate').textContent = d.rate + '%';
+        document.getElementById('tb-alert-btn').textContent = `⚠ ${d.anomaly_count} alerts`;
+
+        dc('c-anomaly');
+        charts['c-anomaly'] = new Chart(document.getElementById('c-anomaly'), {
+          type: 'line',
+          data: {
+            labels: d.sample.map((_, i) => i),
+            datasets: [
+              { data: d.sample, borderColor: '#6366f1', fill: true, backgroundColor: 'rgba(99,102,241,.06)', tension: .3, pointRadius: 0, borderWidth: 1.5 },
+              { data: d.upper, borderColor: 'rgba(239,68,68,.4)', fill: false, tension: 0, pointRadius: 0, borderWidth: 1, borderDash: [5, 5] },
+              { data: d.lower, borderColor: 'rgba(239,68,68,.4)', fill: false, tension: 0, pointRadius: 0, borderWidth: 1, borderDash: [5, 5] },
+              { data: d.anomalies, borderColor: 'transparent', backgroundColor: '#ef4444', pointRadius: d.anomalies.map(v => v ? 5 : 0), showLine: false, pointStyle: 'triangle' }
+            ]
+          },
+          options: { ...baseOpts }
+        });
+
+        let logHtml = d.alerts.map(a =>
+          `<div class="alert-item alert-${a.severity}">
+        <span style="font-size:14px">${a.severity === 'crit' ? '🔴' : a.severity === 'warn' ? '🟡' : '🟢'}</span>
+        <div><div style="font-weight:600">Point #${a.index} — ${a.value} kWh</div>
+        <div style="font-size:10px;opacity:.7;margin-top:2px">Z-score: ${a.zscore} | ${a.severity === 'crit' ? 'Critical spike' : 'Warning level'}</div></div>
+      </div>`
+        ).join('');
+        if (!logHtml) logHtml = '<div style="font-size:11px;color:var(--c3)">✓ No significant anomalies detected.</div>';
+        document.getElementById('alert-log').innerHTML = logHtml;
+
+        document.getElementById('anomaly-term').innerHTML =
+          `<div><span class="t-w">smartgrid@os:~$</span> <span class="t-g">GET /stats → 200 OK</span></div>
+       <div class="t-g">Loaded ${d.sample.length.toLocaleString()} sample points</div>
+       <div class="t-g">Mean: ${d.mean} kWh | Std: ${d.std}</div>
+       <div class="t-${d.anomaly_count > 50 ? 'err' : 'warn'}">Anomalies: ${d.anomaly_count} (${d.rate}%)</div>
+       <div class="t-err">Critical (|z|>3.5): ${d.crit_count}</div>
+       <div class="t-ok">Analysis complete.</div>
+       <div><span class="t-w">smartgrid@os:~$</span> <span style="animation:blink 1s infinite;display:inline-block">█</span></div>`;
+      } catch (e) {
+        document.getElementById('anomaly-term').innerHTML =
+          `<div><span class="t-w">smartgrid@os:~$</span> <span class="t-err">Error: ${e.message}</span></div>
+       <div class="t-g">Make sure Flask backend is running on port 5000</div>`;
+      }
+    }
+
+    // ════════════════════════════════════════════════
+    //  PREDICTION (real ML via /predict)
+    // ════════════════════════════════════════════════
+    async function runPred() {
+      const btn = document.getElementById('pred-btn');
+      btn.disabled = true; btn.textContent = 'Predicting...';
+      try {
+        const payload = {
+          hour: +document.getElementById('pr-h').value,
+          day_of_week: +document.getElementById('pr-d').value,
+          month: +document.getElementById('pr-m').value,
+          is_weekend: +document.getElementById('pr-w').value,
+          season: +document.getElementById('pr-s').value,
+          temp: +document.getElementById('pr-t').value,
+        };
+        const r = await fetch(`${API}/predict`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.error);
+
+        const levelColor = { high: '#ef4444', med: '#f59e0b', low: '#10b981' };
+        const levelLabel = { high: 'High Load', med: 'Normal', low: 'Low Load' };
+
+        const box = document.getElementById('pred-box');
+        box.className = `pred-box ${d.level}`; box.style.display = 'block';
+        document.getElementById('pred-val').style.color = levelColor[d.level];
+        document.getElementById('pred-val').textContent = d.prediction;
+        document.getElementById('pred-badge').innerHTML = `<span class="badge b-${d.level === 'high' ? 'danger' : d.level === 'med' ? 'warn' : 'ok'}">${levelLabel[d.level]}</span>`;
+        document.getElementById('pred-bar').style.cssText = `height:100%;border-radius:4px;width:${d.pct}%;background:${levelColor[d.level]}`;
+        document.getElementById('pred-pct').textContent = `${d.pct}% of estimated capacity`;
+        document.getElementById('pred-factors').innerHTML = d.tips.map(t => `<div style="padding:2px 0">→ ${t}</div>`).join('');
+        document.getElementById('savings-tips').innerHTML = d.tips.map(t => `<div style="padding:2px 0">→ ${t}</div>`).join('');
+
+        // Real forecast chart
+        dc('c-forecast');
+        charts['c-forecast'] = new Chart(document.getElementById('c-forecast'), {
+          type: 'line',
+          data: {
+            labels: Array.from({ length: 24 }, (_, i) => i + 'h'),
+            datasets: [
+              {
+                label: 'ML Forecast', data: d.forecast,
+                borderColor: '#10b981',
+                backgroundColor: ctx => {
+                  const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 210);
+                  g.addColorStop(0, 'rgba(16,185,129,.15)'); g.addColorStop(1, 'rgba(16,185,129,0)');
+                  return g;
+                },
+                fill: true, tension: .4, pointRadius: 3, pointBackgroundColor: '#10b981', borderWidth: 2
+              },
+              {
+                label: 'Baseline', data: Array(24).fill(d.mean),
+                borderColor: 'rgba(99,102,241,.4)', fill: false, tension: 0, pointRadius: 0, borderWidth: 1, borderDash: [6, 4]
+              }
+            ]
+          },
+          options: {
+            ...baseOpts,
+            plugins: { ...baseOpts.plugins, legend: { display: true, position: 'top', labels: { color: '#64748b', boxWidth: 10, font: { size: 9 } } } },
+            scales: { ...baseOpts.scales, x: { ...baseOpts.scales.x, ticks: { color: tc, font: { size: 9 }, autoSkip: false, maxRotation: 0 } } }
+          }
+        });
+        notify(`✓ Predicted: ${d.prediction} kWh`, 'ok');
+      } catch (e) {
+        notify('Prediction error: ' + e.message, 'err');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Predict with Real ML Model →';
+      }
+    }
+
+    // ════════════════════════════════════════════════
+    //  TICKER & AI CONTEXT
+    // ════════════════════════════════════════════════
+    function updateTicker(d) {
+      const k = d.kpi;
+      document.getElementById('ticker').textContent =
+        `⚡ Total: ${k.total}M MWh  ·  Avg: ${k.mean} kWh  ·  Peak: ${k.peak} kWh  ·  Score: ${k.score}/100  ·  ${d.rows.toLocaleString()} data points analyzed  ⚡`;
+    }
+    function updateAIContext(d) {
+      const k = d.kpi;
+      const el = document.getElementById('ai-context');
+      if (!el) return;
+      el.innerHTML =
+        `Records: <strong>${d.rows.toLocaleString()}</strong>\nAvg load: <strong style="color:var(--c1)">${k.mean} kWh</strong>\nPeak: <strong style="color:var(--c4)">${k.peak} kWh</strong>\nEfficiency: <strong>${k.score}/100</strong>\nEnergy column: <strong>${d.energy_col}</strong>\nTime column: <strong>${d.time_col || 'none'}</strong>`;
+    }
+
+    // ════════════════════════════════════════════════
+    //  ROLLING UPDATE (client-side)
+    // ════════════════════════════════════════════════
+    function updateRolling() {
+      if (!globalData) return;
+      const win = +document.getElementById('roll-win').value;
+      const raw = globalData.rolling.raw;
+      // Apply rolling window client-side
+      const rolled = raw.map((_, i, a) => {
+        const sl = a.slice(Math.max(0, i - win + 1), i + 1);
+        return +(sl.reduce((x, y) => x + y, 0) / sl.length).toFixed(2);
+      });
+      dc('c-rolling');
+      charts['c-rolling'] = new Chart(document.getElementById('c-rolling'), {
+        type: 'line',
+        data: {
+          labels: raw.map((_, i) => i),
+          datasets: [
+            { label: 'Raw', data: raw, borderColor: 'rgba(99,102,241,.2)', fill: false, tension: .2, pointRadius: 0, borderWidth: 1 },
+            { label: `${win}h avg`, data: rolled, borderColor: '#6366f1', fill: true, backgroundColor: 'rgba(99,102,241,.07)', tension: .4, pointRadius: 0, borderWidth: 2 }
+          ]
+        },
+        options: {
+          ...baseOpts,
+          plugins: { ...baseOpts.plugins, legend: { display: true, position: 'top', labels: { color: '#64748b', boxWidth: 10, font: { size: 9 } } } }
+        }
+      });
+    }
+
+    // ════════════════════════════════════════════════
+    // AI CHAT — LOCAL SMARTGRID AI
+    // ════════════════════════════════════════════════
+
+    async function sendChat() {
+
+      const input = document.getElementById('chat-in');
+
+      const msg = input.value.trim();
+
+      if (!msg) return;
+
+      input.value = '';
+
+      addMsg(msg, 'user');
+
+      const thinking = addMsg(
+        'Analyzing energy patterns...',
+        'ai'
+      );
+
+      thinking.style.opacity = '.5';
+      thinking.style.fontStyle = 'italic';
+
+      const btn = document.getElementById('send-btn');
+
+      btn.disabled = true;
+
+      try {
+
+        const resp = await fetch('/ai', {
+
+          method: 'POST',
+
+          headers: {
+            'Content-Type': 'application/json'
+          },
+
+          body: JSON.stringify({
+            message: msg
+          })
+
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok || data.error) {
+
+          throw new Error(data.error || `HTTP ${resp.status}`);
+        }
+
+        thinking.remove();
+
+        addMsg(
+          formatAI(data.reply || 'No response'),
+          'ai'
+        );
+
+      } catch (e) {
+
+        thinking.remove();
+
+        addMsg(
+          `AI unavailable: ${e.message}`,
+          'ai'
+        );
+
+      } finally {
+
+        btn.disabled = false;
+      }
+    }
+
+    function quickPrompt(p) {
+
+      document.getElementById('chat-in').value = p;
+
+      sendChat();
+    }
+
+    function addMsg(text, role) {
+
+      const wrap = document.getElementById('chat-wrap');
+
+      const div = document.createElement('div');
+
+      div.className = `chat-msg chat-${role}`;
+
+      div.innerHTML = text;
+
+      wrap.appendChild(div);
+
+      wrap.scrollTop = wrap.scrollHeight;
+
+      return div;
+    }
+
+    function formatAI(t) {
+
+      return t
+
+        .replace(
+          /\*\*(.*?)\*\*/g,
+          '<strong style="color:var(--text)">$1</strong>'
+        )
+
+        .replace(
+          /^- (.*?)$/gm,
+          '<div style="padding:2px 0 2px 10px;border-left:2px solid var(--c1);margin-bottom:3px">$1</div>'
+        )
+
+        .replace(/\n\n/g, '<br><br>')
+
+        .replace(/\n/g, '<br>');
+    }
+
+    function clearChat() {
+
+      document.getElementById('chat-wrap').innerHTML = `
+
+    <div class="chat-msg chat-ai">
+
+      Chat cleared. SmartGrid AI ready.
+
+    </div>
+  `;
+    }
+  </script>
+</body>
+
+</html>

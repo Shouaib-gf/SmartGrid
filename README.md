@@ -74,21 +74,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 pip install -r requirements.txt
 ```
 
-### 4. Create the `.env` file
 
-Create your local environment file from the example:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Then edit `.env` and replace the API key:
-
-```env
-GEMINI_API_KEY=YOUR_REAL_GEMINI_API_KEY
-GEMINI_MODEL=gemini-2.5-flash
-AI_ALLOW_LOCAL_FALLBACK=1
-```
 
 ### Quick command to change only the Gemini API key
 
@@ -147,56 +133,6 @@ If Gemini shows a quota error, it means the free limit of your key was reached. 
 - enable billing,
 - or keep `AI_ALLOW_LOCAL_FALLBACK=1` so the app can answer locally when Gemini is unavailable.
 
-## Before Sending To The Teacher
-
-Do **not** send your private `.env` file if it contains a real API key.
-
-To remove `.env` before sharing:
-
-```powershell
-Remove-Item .env
-```
-
-The project includes `.env.example`, so the teacher can create their own `.env` file.
-
-Also remove generated cache files if they exist:
-
-```powershell
-Remove-Item -Recurse -Force __pycache__
-```
-
-## GitHub Safety
-
-The `.gitignore` file excludes:
-
-```text
-.env
-__pycache__/
-*.pyc
-```
-
-So your real Gemini key should not be pushed to GitHub.
-
-Before pushing, you can check:
-
-```powershell
-git status
-```
-
-Make sure `.env` is not listed.
-
-## Suggested Git Commands
-
-If this folder is not a Git repository yet:
-
-```powershell
-git init
-git add .
-git commit -m "Initial SmartGrid OS project"
-git branch -M main
-git remote add origin YOUR_GITHUB_REPOSITORY_URL
-git push -u origin main
-```
 
 ## Notes For The Report
 
